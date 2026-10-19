@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Туту: Угнать отпуск — Успей на рейс</title>
+<style>
+:root{--navy:#14135f;--violet:#8173ff;--electric:#b9a8ff;--mint:#93ffdb;--yellow:#ffe278;--light:#f5f4ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 75% 0%,#dfdbff 0,#f7f7ff 45%,#eef0ff 100%);color:#191653;font-family:Inter,system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+#tutu-game{width:min(1060px,100%);margin:16px auto;padding:16px}
+.game-shell{background:#161950;border:6px solid #fff;border-radius:26px;box-shadow:0 22px 70px #2e277d25;overflow:hidden}
+.top{padding:18px 22px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;background:#fcfbff}
+.brand{font-weight:1000;letter-spacing:-.085em;line-height:1;font-size:34px;font-style:italic;color:#0d115f}.brand span{color:#8173ff}
+.topright{text-align:right}.topright b{display:block;font-size:15px;font-weight:950;letter-spacing:.045em}.topright small{font-size:11px;color:#6c6b90}
+.game-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px 14px;background:#29286d;color:white}
+.pill{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.065em;padding:8px 10px;border-radius:9px;background:#171653;white-space:nowrap}
+.pill.task{flex:1;white-space:normal;color:#c9ffed}.pill strong{color:#fff}.pill.timer{font-variant-numeric:tabular-nums;background:#8373fa;color:#13114a;font-size:14px}
+.pill.hp{color:#fb90ad}.pill.wanted{color:#ffe981}
+.frame{position:relative;background:#111a3b;overflow:hidden}
+canvas{display:block;width:100%;height:auto;aspect-ratio:960/560;image-rendering:auto}
+.overlay{position:absolute;inset:0;background:linear-gradient(125deg,#171755e8,#241958e6 75%);display:grid;place-items:center;z-index:5;padding:20px;text-align:center}.overlay.hide{display:none}
+.dialog{max-width:495px;background:#fff;color:#131259;border-radius:23px;padding:24px 26px;box-shadow:0 18px 0 #8173ff1c;transform:rotate(-.5deg)}
+.eyebrow{font-weight:950;font-size:11px;letter-spacing:.16em;color:#7d6bf7;margin-bottom:11px}
+.dialog h2{font-size:clamp(26px,4vw,44px);letter-spacing:-.05em;line-height:.99;font-weight:1000;margin:0 0 15px}
+.dialog p{font-size:14px;line-height:1.52;color:#4f4d77;margin:0 0 18px}
+.dialog .prize{display:inline-block;background:#eeebff;border-radius:12px;padding:8px 12px;color:#5444c7;font-size:13px;font-weight:900;margin:2px 0 16px}
+.actions{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.action{border:0;border-radius:13px;background:#7770ff;color:white;font-size:14px;font-weight:950;padding:13px 20px;cursor:pointer;box-shadow:0 5px 0 #5046be;touch-action:manipulation}
+.action:active{transform:translateY(3px);box-shadow:0 2px 0 #5046be}
+.action.secondary{background:#edebff;color:#3e347f;box-shadow:0 5px 0 #d7d2ff}
+.hint{font-size:11px!important;color:#8583a4!important;margin:16px 0 0!important}
+.bottom{display:flex;gap:14px;justify-content:space-between;align-items:center;padding:11px 17px;background:#f1eeff;color:#414078;font-size:12px;font-weight:700}
+.mobile-buttons{display:none;gap:14px;align-items:center;justify-content:space-between;padding:14px 18px 16px;background:#19184f;touch-action:none;user-select:none;-webkit-user-select:none}
+.control-pair{display:flex;gap:10px}.drive-btn{touch-action:none;user-select:none;-webkit-user-select:none;border:1px solid #8d84eb;border-bottom:4px solid #6256ce;color:#fff;background:#554bb3;min-width:65px;height:62px;font-size:25px;font-weight:1000;border-radius:16px}
+.drive-btn.pressed{background:#9f91ff;transform:translateY(2px);border-bottom-width:2px}
+.toast{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:#1c185c;color:white;border:1px solid #a499ff;border-radius:14px;padding:11px 18px;z-index:10;opacity:0;pointer-events:none;transition:opacity .2s;font-size:13px;font-weight:800;text-align:center;max-width:90%}.toast.show{opacity:1}
+@media(max-width:700px){#tutu-game{padding:7px;margin:0}.game-shell{border-width:3px;border-radius:18px}.top{padding:11px 13px}.brand{font-size:27px}.topright b{font-size:12px}.topright small{font-size:10px}.game-bar{padding:8px;gap:5px}.pill{font-size:10px;padding:5px 7px;border-radius:7px}.pill.task{width:100%;flex:auto;order:5}.pill.timer{font-size:12px}.dialog{padding:20px 17px;max-width:330px}.dialog h2{font-size:29px}.dialog p{font-size:12px}.overlay{padding:10px}.action{font-size:12px;padding:10px 15px}.mobile-buttons{display:flex}.bottom{font-size:10px;gap:9px;padding:10px}}
+@media(max-width:380px){.drive-btn{min-width:57px;height:58px}.dialog h2{font-size:25px}.dialog p{font-size:11px}}
+
+/* MOBILE-FIRST WEBVIEW SHELL: no scrolling during driving */
+html{overscroll-behavior:none}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+#tutu-game{width:min(1060px,100%)}
+.frame{height:560px;min-height:280px}.frame canvas{width:100%;height:100%;aspect-ratio:auto;touch-action:none}
+.cash{background:#403782;color:#ffeaa6;font-variant-numeric:tabular-nums}
+.shopping-progress{padding:10px 13px;display:flex;gap:7px;align-items:center;background:#17174d;color:white;overflow-x:auto;scrollbar-width:none}
+.shopping-progress::-webkit-scrollbar{display:none}.progress-label{font-size:9px;color:#bbb3ec;font-weight:1000;letter-spacing:.08em;line-height:1.2;white-space:nowrap}
+.item-chip{display:flex;gap:5px;align-items:center;white-space:nowrap;background:#303064;color:#afafd0;padding:8px 9px;border:1px solid #56518c;border-radius:9px;font-size:13px;flex:1;justify-content:center}
+.item-chip b{font-size:11px}.item-chip.active{background:#7163d5;color:white;border-color:#c7b9ff}.item-chip.done{background:#144e4e;color:#9dffdb;border-color:#52bfa6}.item-chip.done:after{content:'✓';font-size:11px;font-weight:1000}.progress-count{font-size:12px;color:#b1ffe2;font-weight:950;white-space:nowrap}
+.purchase-prompt{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:8px;align-items:center;background:#171650f2;box-shadow:0 8px 24px #080e3a66;border:2px solid #a99cff;padding:8px 10px;border-radius:14px;color:white;white-space:nowrap}.purchase-prompt[hidden]{display:none}.purchase-prompt span{font-weight:850;font-size:12px}.purchase-prompt button{padding:10px 12px;background:#a3ffde;color:#153f46;border:0;font-size:12px;font-weight:1000;border-radius:9px}.purchase-prompt button:disabled{opacity:.44}
+.buy-mobile{font-size:11px;background:#318a75;border-color:#a2ffe3;border-bottom-color:#256e5d}.buy-mobile:disabled{opacity:.4;background:#3f4778;border-color:#585589}
+.pause-overlay{position:absolute;inset:0;background:#101444df;z-index:7;display:grid;place-items:center;padding:14px;text-align:center}.pause-overlay[hidden]{display:none}.pause-dialog{border-radius:17px;padding:18px;background:white;color:#161556;max-width:295px;box-shadow:0 11px 35px #04062666}.pause-dialog h2{margin:0 0 9px;font-size:25px}.pause-dialog p{font-size:13px;line-height:1.4}
+@media(max-width:700px){
+ html,body{height:100%;height:100dvh;overflow:hidden}#tutu-game{height:100%;height:100dvh;min-height:0;margin:0;padding:0;max-width:none}
+ .game-shell{height:100%;display:flex;flex-direction:column;min-height:0;border:0;border-radius:0;box-shadow:none}
+ .top{flex:0 0 auto;padding:9px 12px 8px;padding-top:max(9px,env(safe-area-inset-top))}.brand{font-size:27px}.topright b{font-size:11px}.topright small{font-size:8px}
+ .game-bar{flex:0 0 auto;padding:5px 8px;gap:4px;justify-content:space-between}.pill{font-size:9px;padding:5px 6px}.pill.timer{font-size:12px}.pill.task{order:10;font-size:10px;padding:6px 7px;text-align:center}
+ .shopping-progress{flex:0 0 auto;gap:4px;padding:7px 8px;justify-content:space-between;overflow:hidden}.progress-label{display:none}.item-chip{padding:5px 4px;gap:2px;flex:1 1 0;min-width:0;font-size:13px}.item-chip b{font-size:9px;overflow:hidden;text-overflow:ellipsis}.item-chip.done:after{display:none}.progress-count{font-size:10px;margin-left:2px}
+ .frame{flex:1 1 auto;height:auto;min-height:180px}.mobile-buttons{flex:0 0 auto;display:flex;justify-content:space-between;gap:9px;padding:9px 11px;padding-bottom:max(9px,env(safe-area-inset-bottom));min-height:88px}
+ .control-pair{gap:7px}.drive-btn{min-width:57px;height:61px;border-radius:15px;font-size:25px}.buy-mobile{min-width:65px;font-size:10px}
+ .bottom{display:none}.overlay{padding:9px;overflow-y:auto}.dialog{padding:17px 16px;max-width:330px;width:100%;transform:none}.dialog h2{font-size:29px;margin-bottom:10px}.dialog p{font-size:12px;line-height:1.4;margin-bottom:10px}.dialog .prize{font-size:11px;padding:7px 8px;margin-bottom:10px}.dialog .hint{font-size:10px!important;margin-top:10px!important}.action{padding:10px 13px}
+ .purchase-prompt{bottom:9px;padding:6px 8px}.purchase-prompt span{font-size:10px}.purchase-prompt button{padding:7px 9px;font-size:10px}
+ .toast{bottom:53px;font-size:11px;padding:9px 12px}
+}
+@media(max-width:365px){.drive-btn{min-width:51px;height:60px}.buy-mobile{min-width:62px;font-size:9px}.control-pair{gap:5px}.mobile-buttons{padding-left:7px;padding-right:7px}.item-chip b{font-size:8px}.pill{font-size:8px}}
+@media(max-width:700px) and (max-height:590px){.top{padding-top:4px;padding-bottom:4px}.shopping-progress{padding-top:3px;padding-bottom:3px}.mobile-buttons{min-height:68px;padding-top:5px;padding-bottom:5px}.drive-btn{height:49px}.pill.task{padding:3px}}
+/* Airport cinematic is drawn in a second canvas to keep the main world responsive in WebViews. */
+.pill.timer.urgent{background:#ffda82;color:#5a2433;animation:airportPulse .85s ease-in-out infinite alternate}
+@keyframes airportPulse{from{filter:brightness(1)}to{filter:brightness(1.2)}}
+.flight-scene{position:absolute;inset:0;z-index:4;overflow:hidden;background:#22285b;pointer-events:none}
+.flight-scene[hidden]{display:none!important}
+.flight-scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block;aspect-ratio:auto}
+.flight-heading{position:absolute;top:20px;left:0;right:0;display:flex;flex-direction:column;gap:5px;text-align:center;align-items:center;filter:drop-shadow(0 3px 8px #121c5c)}
+.flight-heading small{padding:5px 11px;background:#151f5cab;border:1px solid #ffffff55;border-radius:99px;font-size:10px;color:#bffff0;font-weight:950;letter-spacing:.08em}
+.flight-heading strong{font-size:clamp(21px,5vw,37px);font-weight:1000;line-height:1.03;letter-spacing:-.04em;color:white;max-width:90%}
+.flight-sub{position:absolute;bottom:19px;left:10%;width:80%;background:#15164bbe;color:#fff;font-size:14px;padding:12px 16px;border:1px solid #ffffff55;border-radius:12px;text-align:center;font-weight:900}
+.overlay.outcome{background:linear-gradient(180deg,#10174b1c 0%,#17184b31 27%,#161b60bb 100%);align-items:end;padding:20px 12px 19px}
+.overlay.outcome .dialog{width:min(480px,100%);box-shadow:0 14px 54px #0e113988;border:2px solid #dbd4ff}
+@media(max-width:700px){.flight-heading{top:13px}.flight-heading small{font-size:9px}.flight-heading strong{font-size:24px}.flight-sub{bottom:14px;font-size:12px}.overlay.outcome{padding-bottom:max(11px,env(safe-area-inset-bottom))}.overlay.outcome .dialog{width:min(330px,100%)}}
+</style>
+</head>
+<body>
+<div id="tutu-game">
+  <div class="game-shell">
+    <div class="top"><div class="brand">tu<span>tu</span><span style="letter-spacing:0;color:#21206a;font-size:11px;font-style:normal;margin-left:12px;font-weight:850">ARCADE</span></div><div class="topright"><b>УГНАТЬ ОТПУСК</b><small>ШОПИНГ · ТРАФИК · АЭРОПОРТ</small></div></div>
+    <div class="game-bar">
+      <div class="pill">МИССИЯ <strong>01 / 01</strong></div><div class="pill cash" id="cash">₽ 1 800</div>
+      <div class="pill timer" id="timer" aria-label="Время до вылета">✈ 04:30</div>
+      <div class="pill hp" id="health">♥ ♥ ♥ ♥ ♥</div>
+      <div class="pill wanted" id="wanted">☆ ☆ ☆</div>
+      <div class="pill task" id="task">ЦЕЛЬ: ЗАБЕРИ ЧЕМОДАН →</div>
+    </div>
+    <div class="shopping-progress" id="progress" aria-label="Список вещей для отпуска">
+       <span class="progress-label">СОБЕРИ<br>ОТПУСК</span>
+       <span class="item-chip active" data-item="bag">🧳 <b>Чемодан</b></span>
+       <span class="item-chip" data-item="glasses">🕶️ <b>Очки</b></span>
+       <span class="item-chip" data-item="spf">🧴 <b>SPF</b></span>
+       <span class="item-chip" data-item="hat">👒 <b>Панама</b></span>
+       <span class="item-chip" data-item="slippers">🩴 <b>Шлёпанцы</b></span>
+       <span class="progress-count" id="progressCount">0 / 5</span>
+    </div>
+    <div class="frame" id="gameFrame">
+      <canvas id="gameCanvas" width="960" height="560" aria-label="Игровой город с магазинами, движущимися машинами, пешеходами и аэропортом"></canvas>
+      <div class="flight-scene" id="flightScene" hidden aria-live="polite">
+        <canvas id="flightCanvas" aria-label="Анимация вылета самолёта"></canvas>
+        <div class="flight-heading"><small id="flightEyebrow">РЕЙС В ОТПУСК · TUTU AIR</small><strong id="flightHeadline">ПОСАДКА ЗАВЕРШЕНА</strong></div>
+        <div class="flight-sub" id="flightSub">Взлетаем!</div>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="dialog">
+          <div class="eyebrow" id="modalTag">ТУТУ ПРЕДСТАВЛЯЕТ · МИССИЯ № 1</div>
+          <h2 id="modalTitle">УГНАТЬ<br>ОТПУСК</h2>
+          <p id="modalCopy">Твой отпуск разбросан по городу! Забери чемодан, купи <strong>очки, SPF-крем, панаму и шлёпанцы</strong>, объезжай трафик, пропускай пешеходов и успей на рейс в аэропорт! Машины уступают дорогу, но <strong>если сам врежешься — за тобой погонится полиция 🚔</strong>. Если опоздаешь, самолёт улетит без тебя. До вылета <strong>4:30</strong> и <strong>1 800 игровых ₽</strong>.</p>
+          <div class="prize" id="modalPrize">🏆 В демоверсии: +100 бонусных баллов за победу</div>
+          <div class="actions"><button class="action" id="startBtn">НАЧАТЬ МИССИЮ ↗</button><button class="action secondary" id="shareBtn" hidden>ПОДЕЛИТЬСЯ ↗</button></div>
+          <p class="hint" id="modalHint">Газ и тормоз справа, повороты слева, покупка — отдельной кнопкой.<br>На компьютере — стрелки / WASD, купить — E.</p>
+        </div>
+      </div>
+      <div class="purchase-prompt" id="buyPrompt" hidden><span id="buyLabel">Купить предмет</span><button id="buyInGame" type="button">КУПИТЬ ↗</button></div>
+      <div class="pause-overlay" id="pauseOverlay" hidden><div class="pause-dialog"><h2>ПАУЗА ⏸</h2><p>Миссия остановлена. Вернись за руль, когда будешь готов.</p><button class="action" id="resumeBtn">ПРОДОЛЖИТЬ ↗</button></div></div>
+      <div class="toast" id="toast" role="status">Результат скопирован!</div>
+    </div>
+    <div class="mobile-buttons" aria-label="Управление машиной">
+      <div class="control-pair"><button class="drive-btn" data-key="left" aria-label="Повернуть налево">←</button><button class="drive-btn" data-key="right" aria-label="Повернуть направо">→</button></div>
+      <div class="control-pair"><button class="drive-btn buy-mobile" id="buyMobile" aria-label="Купить предмет" disabled>КУПИТЬ</button><button class="drive-btn" data-key="down" aria-label="Тормоз">↓</button><button class="drive-btn" data-key="up" aria-label="Газ">↑</button></div>
+    </div>
+    <div class="bottom"><span>▲ Машины притормозят · ДТП = погоня</span><span>Неофициальная аркада · игровой прототип</span></div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const canvas=$('gameCanvas'),ctx=canvas.getContext('2d',{alpha:false});const flightCanvas=$('flightCanvas'),flightCtx=flightCanvas.getContext('2d',{alpha:false});
+if(!ctx.roundRect){ctx.roundRect=function(x,y,w,h,r){r=Math.max(0,Math.min(Number(r)||0,Math.min(w,h)/2));this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);return this;};}
+const vx=[180,540,900,1260,1620],hy=[180,480,780,1080],rw=134,MW=1800,MH=1200;
+const STEPS=[
+ {id:'bag',name:'Чемодан',label:'ЗАБЕРИ ЧЕМОДАН',emoji:'🧳',price:0,x:540,y:780,color:'#ffe27f'},
+ {id:'glasses',name:'Солнцезащитные очки',label:'КУПИ ОЧКИ',emoji:'🕶️',price:350,x:1260,y:780,color:'#a5c6ff'},
+ {id:'spf',name:'SPF-крем',label:'КУПИ SPF',emoji:'🧴',price:390,x:1260,y:180,color:'#ffb0ce'},
+ {id:'hat',name:'Панама',label:'КУПИ ПАНАМУ',emoji:'👒',price:320,x:540,y:180,color:'#c8afff'},
+ {id:'slippers',name:'Шлёпанцы',label:'КУПИ ШЛЁПАНЦЫ',emoji:'🩴',price:240,x:540,y:1080,color:'#9effdc'},
+ {id:'exit',name:'Аэропорт',label:'УСПЕЙ В АЭРОПОРТ',emoji:'✈️',price:0,x:1620,y:180,color:'#a8ffdb'}
+];
+const keys={up:false,down:false,left:false,right:false,brake:false};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(n)=>{const z=Math.sin(n*129.31+78.11)*43758.5453;return z-Math.floor(z)};
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const buildings=[],trees=[],parked=[],traffic=[],pedestrians=[];
+const palette=['#39457f','#453f86','#564992','#34558b','#45467c','#505189'];
+let W=390,H=520,dpr=1,player={x:180,y:780,a:0,speed:0},police=[],remaining=270,money=1800,life=5,step=0,immune=0,mode='menu',elapsed=0,finishTime=0,damageCount=0,trafficCrashes=0,trafficCrashCooldown=0,nearShop=false,toastTimer=null,lastToast=0;
+let camera={x:0,y:0},last=0,particles=[],flash=0,winCopy='',flight=null;
+function buildWorld(){
+ for(let i=0;i<vx.length-1;i++)for(let j=0;j<hy.length-1;j++){
+  const x=vx[i]+rw/2+18,y=hy[j]+rw/2+18;
+  const w=vx[i+1]-vx[i]-rw-36,h=hy[j+1]-hy[j]-rw-36;
+  buildings.push({x,y,w,h,park:(i===1&&j===1)||(i===3&&j===0),clr:palette[(i*7+j*3)%palette.length],id:i*5+j});
+ }
+ vx.forEach((x,i)=>hy.forEach((y,j)=>{if((i*4+j)%3===1)parked.push({x:x+45,y:y+69,col:i%2?'#5dccd8':'#c5a0ff',angle:0});}));
+ for(let i=0;i<24;i++){
+  const x=70+rnd(i*9)*1660,y=56+rnd(i*17+3)*1090;
+  if(!vx.some(a=>Math.abs(a-x)<83)&&!hy.some(a=>Math.abs(a-y)<83)&&!buildings.some(b=>x>b.x-25&&x<b.x+b.w+25&&y>b.y-25&&y<b.y+b.h+25))trees.push({x,y});
+ }
+ for(let i=0;i<22;i++){
+  const axis=i%2?'v':'h',dir=i%4<2?1:-1;
+  const lane=axis==='h'?hy[(i*3+Math.floor(i/3))%hy.length]:vx[(i*3+Math.floor(i/3))%vx.length];
+  const pos=axis==='h'?(55+rnd(i+11)*1690):(55+rnd(i+10)*1090);
+  const x=axis==='h'?pos:lane+(dir>0?-29:29),y=axis==='v'?pos:lane+(dir>0?29:-29);
+  traffic.push({x,y,axis,dir,lane,speed:65+rnd(i*5)*66,col:['#ffe39a','#69c9d1','#df9acb','#a9b8e8','#93daba','#f5a787'][i%6],kind:i%5===1?'van':'car',v:0,braking:false});
+ }
+ // Clear the opening intersection so a new player is not rammed at spawn.
+ for(const car of traffic){if(Math.hypot(car.x-180,car.y-780)<180){if(car.axis==='h')car.x=(car.x+390)%MW;else car.y=(car.y+390)%MH;}}
+ const spots=[[180,480,'v'],[540,480,'h'],[900,780,'v'],[1260,480,'v'],[1620,780,'h'],[900,180,'h'],[540,1080,'v'],[1260,1080,'h'],[180,180,'v'],[1620,180,'h'],[900,1080,'v'],[180,780,'h']];
+ spots.forEach(([rx,ry,axis],i)=>{pedestrians.push({rx,ry,axis,d:rnd(i+19)*130-65,dir:i%2?1:-1,speed:22+rnd(i+30)*20,phase:i*.45,coat:['#ffb0d0','#ffe4a1','#afffdb','#c4adff'][i%4]});});
+}
+function stopKeys(){Object.keys(keys).forEach(k=>keys[k]=false);document.querySelectorAll('.drive-btn').forEach(el=>el.classList.remove('pressed'))}
+function resize(){const rect=$('gameFrame').getBoundingClientRect();W=Math.max(200,rect.width||390);H=Math.max(220,rect.height||440);dpr=Math.min(window.devicePixelRatio||1,1.7);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width='100%';canvas.style.height='100%';flightCanvas.width=canvas.width;flightCanvas.height=canvas.height;}
+function reset(){player={x:180,y:780,a:0,speed:0};police=[];remaining=270;money=1800;life=5;step=0;immune=4;mode='playing';elapsed=0;finishTime=0;damageCount=0;trafficCrashes=0;trafficCrashCooldown=0;flash=0;particles=[];nearShop=false;winCopy='';flight=null;$('flightScene').hidden=true;$('overlay').classList.remove('outcome');stopKeys();for(const car of traffic){car.v=0;car.braking=false;if(dist(player,car)<170){if(car.axis==='h')car.x=(car.x+450)%MW;else car.y=(car.y+450)%MH;}}camera={x:clamp(player.x-W/2,0,MW-W),y:clamp(player.y-H/2,0,MH-H)};
+ $('overlay').classList.add('hide');$('buyPrompt').hidden=true;document.querySelectorAll('.item-chip').forEach(el=>{el.classList.remove('done','active');if(el.dataset.item==='bag')el.classList.add('active')});updateHud();}
+function current(){return STEPS[Math.min(step,5)]}
+function progress(){document.querySelectorAll('.item-chip').forEach(el=>{let idx=STEPS.findIndex(x=>x.id===el.dataset.item);el.classList.toggle('done',idx<step);el.classList.toggle('active',idx===step)});$('progressCount').textContent=Math.min(step,5)+' / 5'}
+function updateHud(){let t=Math.max(0,Math.ceil(remaining));$('timer').textContent='✈ '+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');$('timer').classList.toggle('urgent',remaining<=40&&mode==='playing');$('health').textContent='♥ '.repeat(life)+'♡ '.repeat(5-life);$('wanted').textContent=trafficCrashes===0?'☆ ☆ ☆':trafficCrashes===1?'★ ☆ ☆':trafficCrashes===2?'★ ★ ☆':'★ ★ ★';$('cash').textContent='₽ '+money.toLocaleString('ru-RU');
+ const target=current();$('task').textContent=(step===5?'ФИНИШ: ':'ЦЕЛЬ: ')+target.label+(step>0&&step<5?' · '+target.price+' ₽':'')+' →';progress();
+ nearShop=mode==='playing'&&step>0&&step<5&&dist(player,target)<83;
+ const stopped=Math.abs(player.speed)<56;
+ $('buyPrompt').hidden=!nearShop;
+ if(nearShop){$('buyLabel').textContent=stopped?target.emoji+' '+target.name+' · '+target.price+' ₽':'ПРИТОРМОЗИ ДЛЯ ПОКУПКИ';$('buyInGame').disabled=!stopped;}
+ $('buyMobile').disabled=!(nearShop&&stopped);}
+function showToast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),1800)}
+function purchase(){if(mode!=='playing')return;const target=current();if(step<=0||step>=5)return;if(dist(player,target)>=83){showToast('Подъедь к отмеченному магазину');return}if(Math.abs(player.speed)>=56){showToast('Остановись у магазина');return}if(money<target.price){showToast('Не хватает игровых рублей!');return}money-=target.price;step++;life=Math.min(5,life+1);showToast('ПОКУПКА: '+target.emoji+' '+target.name+' · +1 ♥');if(step===5){showToast('ВСЁ КУПЛЕНО! УСПЕЙ НА РЕЙС ✈️');}updateHud();}
+function popup(tag,title,copy,prize,button,share){$('modalTag').textContent=tag;$('modalTitle').innerHTML=title;$('modalCopy').innerHTML=copy;$('modalPrize').textContent=prize;$('startBtn').textContent=button;$('shareBtn').hidden=!share;$('modalHint').innerHTML=mode==='menu'?'Газ и тормоз справа, поворот слева.<br>Остановись у магазина и нажми «Купить».':'Баллы в демо виртуальные. Начисление к аккаунту Туту не подключено.';$('overlay').classList.remove('hide');}
+// Reaching the airport before departure starts the boarding/takeoff cutscene.
+// If the deadline expires (or the car is wrecked), the same plane leaves without the player.
+function end(win,reason){if(mode!=='playing')return;mode='flight';finishTime=270-remaining;stopKeys();$('buyPrompt').hidden=true;$('buyMobile').disabled=true;clearTimeout(toastTimer);$('toast').classList.remove('show');updateHud();
+ flight={win,reason,t:0,duration:3.1};$('flightScene').hidden=false;
+ $('flightEyebrow').textContent=win?'TUTU AIR · ВЫЛЕТ ПО РАСПИСАНИЮ':'TUTU AIR · ПОСАДКА ЗАКРЫТА';
+ $('flightHeadline').textContent=win?'ТЫ НА БОРТУ! ✈':'САМОЛЁТ УЛЕТАЕТ…';
+ $('flightSub').textContent=win?'Твой отпуск начинается прямо сейчас!':reason==='time'?'Время вышло — этот рейс уже не догнать.':'Машина сломалась — этот рейс уже не догнать.';
+}
+function finishFlight(){if(!flight||mode!=='flight')return;
+ const win=flight.win,reason=flight.reason;mode=win?'win':'fail';$('overlay').classList.add('outcome');
+ if(win){const tt=Math.floor(finishTime/60)+' мин '+Math.floor(finishTime%60)+' сек';
+  winCopy='Я успел на самолёт и улетел в отпуск за '+tt+' в «Туту: Угнать отпуск»! ✈️🏖️ А ты успеешь на рейс?';
+  popup('ПОСАДКА УСПЕШНА · СЧАСТЛИВОГО ПОЛЁТА','ТЫ УЛЕТЕЛ<br>В ОТПУСК! ✈️','Все <b>5 вещей</b> собраны, ты добрался до аэропорта за <b>'+tt+'</b> и успел на самолёт. Покупки: <b>'+(1800-money)+' ₽</b>, столкновения: <b>'+damageCount+'</b>.','✦ +100 БАЛЛОВ ТУТУ · ДЕМО','ЛЕТЕТЬ ЕЩЁ РАЗ ↗',true);
+ }else{
+  const detail=reason==='time'?'Ты не успел в аэропорт до закрытия посадки.':'Машина не выдержала столкновений, и ты опоздал на рейс.';
+  popup('РЕЙС ВЫЛЕТЕЛ · МИССИЯ НЕ ПРОЙДЕНА','ТЫ НЕ УСПЕЛ<br>НА САМОЛЁТ','✈️ Самолёт улетел без тебя. '+detail+' Собрано <b>'+Math.min(step,5)+' из 5</b> вещей. Попробуешь ещё раз?','🎮 +100 демобаллов за успешный рейс','ПОПРОБОВАТЬ ЕЩЁ ↗',false);
+ }
+}
+function drawAirplane(c,x,y,scale,fill){c.save();c.translate(x,y);c.scale(scale,scale);
+ c.shadowColor='#0b154a75';c.shadowBlur=13;c.shadowOffsetY=9;
+ c.fillStyle=fill;
+ // wings and horizontal stabilizers, bird's-eye view, nose points upward
+ c.beginPath();c.moveTo(-12,-5);c.lineTo(-78,24);c.lineTo(-83,41);c.lineTo(-11,31);c.lineTo(11,31);c.lineTo(83,41);c.lineTo(78,24);c.lineTo(12,-5);c.closePath();c.fill();
+ c.beginPath();c.moveTo(-10,51);c.lineTo(-36,76);c.lineTo(-34,86);c.lineTo(0,73);c.lineTo(34,86);c.lineTo(36,76);c.lineTo(10,51);c.closePath();c.fill();
+ c.beginPath();c.moveTo(0,-73);c.bezierCurveTo(-16,-71,-17,-35,-14,24);c.lineTo(-10,67);c.quadraticCurveTo(0,86,10,67);c.lineTo(14,24);c.bezierCurveTo(17,-35,16,-71,0,-73);c.fill();
+ c.shadowBlur=0;c.shadowOffsetY=0;
+ c.fillStyle='#7771ee';c.fillRect(-9,27,18,8);c.fillStyle='#c5d6ff';
+ for(let i=0;i<5;i++){let yy=-37+i*15;c.fillRect(-12,yy,3,7);c.fillRect(9,yy,3,7)}
+ c.fillStyle='#242767';c.beginPath();c.moveTo(-5,-59);c.lineTo(5,-59);c.lineTo(7,-42);c.lineTo(-7,-42);c.closePath();c.fill();
+ c.fillStyle='#9a89ff';c.fillRect(-58,31,26,7);c.fillRect(32,31,26,7);
+ // two engines
+ c.fillStyle='#ddd8ff';c.fillRect(-44,33,13,22);c.fillRect(31,33,13,22);
+ c.restore();}
+function drawFlight(){if(!flight||$('flightScene').hidden)return;
+ const c=flightCtx;const t=Math.min(1,flight.t/flight.duration),ease=t*t*(3-2*t);c.setTransform(dpr,0,0,dpr,0,0);
+ const sky=c.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#263271');sky.addColorStop(.46,'#776dea');sky.addColorStop(1,'#b9baff');c.fillStyle=sky;c.fillRect(0,0,W,H);
+ // departing runway recedes as the airplane climbs
+ c.save();c.globalAlpha=Math.max(0,1-t*.95);c.fillStyle='#22274f';c.fillRect(W*.18,H*.31,W*.64,H*.75);c.fillStyle='#a7a4d2';
+ for(let i=0;i<10;i++){let yy=H*.34+i*65+((t*H*1.9)%65);c.fillRect(W*.49,yy,W*.02,28)}
+ for(let i=0;i<12;i++){let yy=H*.35+i*48+((t*H*.9)%48);c.fillStyle=i%2?'#a8ffdd':'#ffe58d';c.fillRect(W*.19,yy,5,8);c.fillRect(W*.80,yy,5,8)}c.restore();
+ // soft clouds slide past in either ending
+ for(let i=0;i<9;i++){const px=((i*137+41)%Math.max(W,1)),py=((i*79+60+t*240)%(H+140))-60;c.globalAlpha=.23+.28*(i%3)/3;c.fillStyle='#fff';c.beginPath();c.ellipse(px,py,24+i%3*19,9+i%4*6,0,0,Math.PI*2);c.fill()}c.globalAlpha=1;
+ const x=flight.win?W*(.5+Math.sin(t*3)*.025):W*(.44+t*.27);
+ const y=flight.win?H*(.77-.40*ease):H*(.73-.58*ease);
+ const sc=flight.win?Math.min(1.65,Math.max(.57,W/380))*(.84+.26*ease):Math.min(1.4,Math.max(.53,W/380))*(1-.69*ease);
+ drawAirplane(c,x,y,sc,'#fdfcff');
+ if(flight.win&&t>.60){for(let i=0;i<17;i++){const x2=(i*103+67)%W,y2=(i*71+13)%H;c.fillStyle=['#ffdf7a','#9affe0','#fff','#c5aaff'][i%4];c.save();c.translate(x2,y2);c.rotate((t-.6)*3+i);c.fillRect(-3,-5,6,10);c.restore();}}
+}
+function updateFlight(dt){if(!flight||mode!=='flight')return;flight.t=Math.min(flight.duration,flight.t+dt);if(flight.t>=flight.duration)finishFlight();}
+function hit(force=1,trafficFault=false){if(immune>0||mode!=='playing')return;life-=force;damageCount++;immune=1.6;flash=.45;player.speed*=-.23;for(let i=0;i<12;i++)particles.push({x:player.x,y:player.y,vx:(rnd(i+elapsed*3)-.5)*150,vy:(rnd(i+elapsed*9)-.5)*150,t:.4});if(life<=0){life=0;end(false,'hit')}else if(!trafficFault)showToast('СТОЛКНОВЕНИЕ! ОСТОРОЖНЕЕ 🚗');}
+function circleRect(x,y,r,b){const xx=clamp(x,b.x,b.x+b.w),yy=clamp(y,b.y,b.y+b.h);return (x-xx)**2+(y-yy)**2<r*r}
+// Drivers react to the player and to slower cars in the same lane.
+// All positions are in world pixels. "ahead" is positive in the car's driving direction.
+function trafficAhead(p,other){
+ const px=p.axis==='h'?p.x:p.y, py=p.axis==='h'?p.y:p.x;
+ const ox=p.axis==='h'?other.x:other.y, oy=p.axis==='h'?other.y:other.x;
+ return {ahead:(ox-px)*p.dir,lateral:Math.abs(oy-py)};
+}
+function updateTraffic(dt){
+ for(const p of traffic){
+  let goal=p.speed, limit=Infinity;
+  const a=trafficAhead(p,player);
+  if(a.lateral<43&&a.ahead>-30&&a.ahead<200){
+   // One car-length + visible space: traffic NEVER advances onto the player.
+   // Smoothly approach the stopping point, even when the player is stationary.
+   const safe=p.kind==='van'?85:78;
+   limit=Math.min(limit,Math.max(0,a.ahead-safe));
+   goal=Math.min(goal,Math.max(0,(a.ahead-safe)/.60));
+  }
+  // Cars queue behind each other rather than driving through stopped cars.
+  for(const other of traffic){if(other===p||other.axis!==p.axis||other.dir!==p.dir)continue;
+   const b=trafficAhead(p,other);
+   if(b.lateral<24&&b.ahead>0&&b.ahead<145){
+    limit=Math.min(limit,Math.max(0,b.ahead-(p.kind==='van'||other.kind==='van'?77:70)));
+    goal=Math.min(goal,Math.max(0,(b.ahead-72)/.60));
+   }
+  }
+  // Reaction is quick enough for short game frames and safe on lower-end devices.
+  p.v=goal<p.v?Math.max(goal,p.v-620*dt):Math.min(goal,p.v+250*dt);
+  let move=Math.min(Math.max(0,p.v*dt),limit);
+  p.braking=move<Math.max(1,p.speed*dt*.38);
+  if(p.axis==='h'){
+   p.x+=p.dir*move;
+   if(p.x>MW+55)p.x=-55;
+   if(p.x< -55)p.x=MW+55;
+  }else{
+   p.y+=p.dir*move;
+   if(p.y>MH+55)p.y=-55;
+   if(p.y< -55)p.y=MH+55;
+  }
+ }
+}
+// A collision is attributed to the PLAYER only when their own movement
+// brings them closer to an existing vehicle. NPC movement never damages them.
+function playerTrafficCollision(oldX,oldY){
+ const moved=Math.hypot(player.x-oldX,player.y-oldY);
+ if(moved<.45||Math.abs(player.speed)<14)return false;
+ for(const car of traffic){
+  const d1=Math.hypot(player.x-car.x,player.y-car.y);
+  const d0=Math.hypot(oldX-car.x,oldY-car.y);
+  const threshold=car.kind==='van'?40:37;
+  if(d1<threshold&&d1<d0-.15){
+   player.x=oldX;player.y=oldY;
+   if(trafficCrashCooldown<=0){
+    trafficCrashCooldown=1.1;
+    trafficCrashes++;
+    if(!police.length){spawnPolice();showToast('ДТП! ПОЛИЦИЯ НАЧАЛА ПОГОНЮ 🚔');}
+    else showToast('НОВАЯ АВАРИЯ! РОЗЫСК УСИЛЕН 🚔');
+    // Existing collision immunity only protects from repeated damage.
+    hit(1,true);
+   }
+   player.speed*=-.22;
+   return true;
+  }
+ }
+ return false;
+}
+function updatePedestrians(dt){for(const p of pedestrians){p.phase-=dt;if(p.phase>0)continue;p.d+=p.dir*p.speed*dt;if(Math.abs(p.d)>78){p.d=clamp(p.d,-78,78);p.dir*=-1;p.phase=1.3+rnd(elapsed+p.rx)*1.7;}const px=p.axis==='h'?p.rx+p.d:p.rx+77,py=p.axis==='h'?p.ry+77:p.ry+p.d;
+  if(Math.hypot(px-player.x,py-player.y)<35&&Math.abs(player.speed)>0){player.x-=Math.cos(player.a)*player.speed*dt;player.y-=Math.sin(player.a)*player.speed*dt;player.speed=0;if(elapsed-lastToast>4){showToast('ПРОПУСТИ ПЕШЕХОДА 🚶');lastToast=elapsed;}}
+ }}
+function spawnPolice(){
+ const roadY=hy.reduce((a,b)=>Math.abs(player.y-a)<Math.abs(player.y-b)?a:b);
+ const roadX=vx.reduce((a,b)=>Math.abs(player.x-a)<Math.abs(player.x-b)?a:b);
+ const xDir=player.x>MW/2?-1:1,yDir=player.y>MH/2?-1:1;
+ police=[
+  {x:clamp(player.x-xDir*265,35,MW-35),y:roadY+(xDir>0?29:-29),axis:'h',dir:xDir,speed:137,c:.25},
+  {x:roadX+(yDir>0?-29:29),y:clamp(player.y-yDir*315,35,MH-35),axis:'v',dir:yDir,speed:129,c:.3}
+ ];
+}
+function updatePolice(dt){for(const p of police){p.c-=dt;if(p.c<=0){if(p.axis==='h') {const cross=vx.find(x=>Math.abs(x-p.x)<p.speed*dt+3);if(cross!==undefined&&Math.abs(player.y-p.y)>95){p.x=cross;p.axis='v';p.dir=player.y>p.y?1:-1;p.c=.6}else{p.dir=player.x>p.x?1:-1;p.c=.4}}else{const cross=hy.find(y=>Math.abs(y-p.y)<p.speed*dt+3);if(cross!==undefined&&Math.abs(player.x-p.x)>95){p.y=cross;p.axis='h';p.dir=player.x>p.x?1:-1;p.c=.6}else{p.dir=player.y>p.y?1:-1;p.c=.4}}}
+ if(p.axis==='h')p.x+=p.dir*p.speed*dt;else p.y+=p.dir*p.speed*dt;
+ p.x=clamp(p.x,18,MW-18);p.y=clamp(p.y,18,MH-18);if(Math.hypot(player.x-p.x,player.y-p.y)<37&&immune<=0)hit();}}
+function update(dt){if(mode!=='playing')return;elapsed+=dt;remaining-=dt;immune=Math.max(0,immune-dt);trafficCrashCooldown=Math.max(0,trafficCrashCooldown-dt);flash=Math.max(0,flash-dt);if(remaining<=0){remaining=0;end(false,'time');return}
+ let acc=(keys.up?290:0)-(keys.down?355:0);if(acc)player.speed+=acc*dt;else{player.speed*=Math.exp(-2.8*dt);if(Math.abs(player.speed)<2)player.speed=0}player.speed=clamp(player.speed,-112,225);
+ const steer=(keys.right?1:0)-(keys.left?1:0);if(keys.brake)player.speed*=Math.exp(-5*dt);if(steer&&Math.abs(player.speed)>8)player.a+=steer*dt*(1.1+1.35*clamp(Math.abs(player.speed)/210,0,1))*(player.speed>0?1:-1);
+ const ox=player.x,oy=player.y,oldSpeed=player.speed;player.x+=Math.cos(player.a)*player.speed*dt;player.y+=Math.sin(player.a)*player.speed*dt;
+ if(player.x<22||player.x>MW-22||player.y<22||player.y>MH-22||buildings.some(b=>!b.park&&circleRect(player.x,player.y,21,b))){player.x=ox;player.y=oy;player.speed*=-.2;if(Math.abs(oldSpeed)>95&&immune<=0)hit()}
+ playerTrafficCollision(ox,oy);updateTraffic(dt);updatePedestrians(dt);
+ if(police.length)updatePolice(dt);
+ if(step===0&&dist(player,STEPS[0])<70){step=1;showToast('ЧЕМОДАН ТВОЙ! ТЕПЕРЬ ЗА ПОКУПКАМИ 🧳')}
+ if(step===5&&dist(player,STEPS[5])<77){end(true)}
+ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.t-=dt;if(p.t<=0)particles.splice(i,1)}
+ camera.x+=(clamp(player.x-W/2,0,Math.max(0,MW-W))-camera.x)*Math.min(1,dt*6);
+ camera.y+=(clamp(player.y-H/2,0,Math.max(0,MH-H))-camera.y)*Math.min(1,dt*6);updateHud();
+}
+function rr(x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function drawTree(x,y){rr(x-4,y-4,12,16,3,'#173f49');ctx.fillStyle='#4eac86';ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);ctx.fill();ctx.fillStyle='#75cfab';ctx.beginPath();ctx.arc(x-4,y-4,7,0,Math.PI*2);ctx.fill()}
+function drawCar(x,y,a,color,cop=false,scale=1,van=false,braking=false){ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(scale,scale);const long=van?63:53;rr(-long/2-2,-15,long+4,30,7,'#10173c90');rr(-long/2,-13,long,26,7,color);rr(-14,-10,van?34:24,20,3,cop?'#223c76':'#26385d');rr(long/2-14,-9,8,18,2,cop?'#879fe1':'#d4c5ff');rr(-18,-17,11,5,1,'#141632');rr(-18,12,11,5,1,'#141632');rr(12,-17,11,5,1,'#141632');rr(12,12,11,5,1,'#141632');rr(long/2-3,-10,4,6,1,'#fff4bc');rr(long/2-3,4,4,6,1,'#fff4bc');rr(-long/2-2,-9,4,6,1,'#ff849d');rr(-long/2-2,3,4,6,1,'#ff849d');if(braking){rr(-long/2-5,-12,5,9,2,'#ff304e');rr(-long/2-5,3,5,9,2,'#ff304e')}if(cop){rr(-5,-6,12,12,2,'#f8f9fe');rr(-5,-5,6,10,1,Math.floor(elapsed*8)%2===0?'#ff7c9c':'#7cc3ff');rr(1,-5,6,10,1,Math.floor(elapsed*8)%2===0?'#7cc3ff':'#ff7c9c')}else if(color==='#a59bff'){rr(-4,-5,13,10,3,'#a69dff');ctx.font='bold 8px system-ui';ctx.fillStyle='#fff';ctx.fillText('t',-1,3)}ctx.restore()}
+function drawPedestrian(p){if(p.phase>0)return;const x=p.axis==='h'?p.rx+p.d:p.rx+77,y=p.axis==='h'?p.ry+77:p.ry+p.d;ctx.save();ctx.translate(x,y);rr(-4,1,4,8,2,'#101a35');rr(2,1,4,8,2,'#101a35');rr(-6,-8,12,13,5,p.coat);ctx.fillStyle='#ffdfc2';ctx.beginPath();ctx.arc(0,-9,5,0,Math.PI*2);ctx.fill();ctx.restore()}
+function drawWorld(){ctx.fillStyle='#1d3259';ctx.fillRect(0,0,MW,MH);
+ for(const x of vx){rr(x-rw/2-12,0,rw+24,MH,5,'#36456f');rr(x-rw/2,0,rw,MH,3,'#232b53')}
+ for(const y of hy){rr(0,y-rw/2-12,MW,rw+24,5,'#36456f');rr(0,y-rw/2,MW,rw,3,'#232b53')}
+ ctx.save();ctx.setLineDash([20,25]);ctx.lineWidth=3;ctx.strokeStyle='#858db360';for(const x of vx){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,MH);ctx.stroke()}for(const y of hy){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(MW,y);ctx.stroke()}ctx.restore();
+ for(const x of vx)for(const y of hy){rr(x-80,y-82,160,164,0,'#232b53');for(let i=-3;i<=3;i++){rr(x-86,y+i*12-3,18,6,1,'#c4c9e88b');rr(x+68,y+i*12-3,18,6,1,'#c4c9e88b');rr(x+i*12-3,y-86,6,18,1,'#c4c9e88b');rr(x+i*12-3,y+68,6,18,1,'#c4c9e88b')}}
+ for(const b of buildings){if(b.park){rr(b.x-10,b.y-10,b.w+20,b.h+20,7,'#557f72');rr(b.x,b.y,b.w,b.h,5,'#335b61');line(b.x+8,b.y+b.h/2,b.x+b.w-8,b.y+b.h/2,'#95a6ad',9);for(let i=0;i<5;i++){let xx=b.x+25+i*36;drawTree(xx,b.y+25+(i%2)*10);drawTree(xx,b.y+b.h-29+(i%2)*-5)}}else{rr(b.x+8,b.y+11,b.w,b.h,7,'#0e183c90');rr(b.x,b.y,b.w,b.h,6,b.clr);rr(b.x+8,b.y+8,b.w-16,b.h-16,5,'#6170a92e');ctx.strokeStyle='#b5affd65';ctx.lineWidth=2;ctx.strokeRect(b.x+11,b.y+11,b.w-22,b.h-22);for(let i=0;i<3;i++)for(let j=0;j<2;j++)rr(b.x+24+i*(b.w-57)/2.5,b.y+27+j*(b.h-54),25,11,2,(i+j+b.id)%3?'#91a6d9':'#a59cff')}}
+ for(const t of trees)drawTree(t.x,t.y);for(const c of parked)drawCar(c.x,c.y,c.angle,c.col,false,.76);
+ // Airport runway at the north edge, visible just before the boarding gate at (1620,180).
+ rr(1326,16,452,92,9,'#171b47');rr(1336,24,428,76,5,'#373a67');
+ ctx.save();ctx.setLineDash([26,19]);line(1356,61,1750,61,'#e4deff',4);ctx.restore();
+ for(let i=0;i<9;i++){rr(1356+i*45,22,8,4,2,'#b6ffe3');rr(1356+i*45,96,8,4,2,'#ffe7a7');}
+ // Park block near the runway is turned into the airport terminal.
+ rr(1345,263,222,134,11,'#121d40');rr(1351,269,210,122,9,'#756bdf');
+ for(let i=0;i<7;i++)rr(1360+i*28,326,18,42,3,'#bdeaff');
+ rr(1361,278,190,36,7,'#322a8d');ctx.fillStyle='#fff';ctx.font='900 20px system-ui';ctx.fillText('✈ АЭРОПОРТ',1376,302);
+ rr(1578,246,82,25,7,'#a3ffda');ctx.fillStyle='#1f3451';ctx.font='900 12px system-ui';ctx.fillText('ВХОД ↗',1594,263);
+ ctx.save();ctx.translate(1689,62);ctx.rotate(Math.PI/2);ctx.scale(.32,.32);ctx.fillStyle='#f5f5ff';ctx.beginPath();ctx.moveTo(0,-73);ctx.lineTo(-14,-9);ctx.lineTo(-83,36);ctx.lineTo(-80,45);ctx.lineTo(-10,32);ctx.lineTo(-34,80);ctx.lineTo(-28,84);ctx.lineTo(0,67);ctx.lineTo(28,84);ctx.lineTo(34,80);ctx.lineTo(10,32);ctx.lineTo(80,45);ctx.lineTo(83,36);ctx.lineTo(14,-9);ctx.closePath();ctx.fill();ctx.restore();
+}
+function marker(st){const p=1+Math.sin(elapsed*5)*.07;ctx.save();ctx.translate(st.x,st.y);ctx.strokeStyle=st.color+'66';ctx.lineWidth=14;ctx.beginPath();ctx.arc(0,0,43*p,0,Math.PI*2);ctx.stroke();ctx.strokeStyle=st.color;ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.beginPath();ctx.arc(0,0,53*p,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+ const label=st.id==='exit'?'В АЭРОПОРТ':st.label;const lw=st.id==='exit'?154:st.id==='glasses'||st.id==='slippers'?150:128;rr(-lw/2,-96,lw,31,7,'#10184a');ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='900 13px system-ui';ctx.fillText(label,0,-75);rr(-27,-27,54,54,12,st.color);ctx.fillStyle='#1b155c';ctx.font='27px system-ui';ctx.fillText(st.emoji,0,10);ctx.restore();}
+function drawArrow(){const st=current(),ang=Math.atan2(st.y-player.y,st.x-player.x);ctx.save();ctx.translate(player.x,player.y);ctx.rotate(ang);ctx.translate(64,0);ctx.fillStyle=st.color;ctx.beginPath();ctx.moveTo(15,0);ctx.lineTo(-8,-12);ctx.lineTo(-3,0);ctx.lineTo(-8,12);ctx.closePath();ctx.fill();ctx.restore();}
+function drawMinimap(){const mobile=W<600,w=mobile?106:150,h=mobile?80:108,x=W-w-11,y=12,sx=w/MW,sy=h/MH;rr(x-3,y-3,w+6,h+6,10,'#0e153dea');rr(x,y,w,h,8,'#252a5f');ctx.strokeStyle='#767bb0';ctx.lineWidth=rw*sx*.65;for(let k of vx){ctx.beginPath();ctx.moveTo(x+k*sx,y);ctx.lineTo(x+k*sx,y+h);ctx.stroke()}ctx.lineWidth=rw*sy*.65;for(let k of hy){ctx.beginPath();ctx.moveTo(x,y+k*sy);ctx.lineTo(x+w,y+k*sy);ctx.stroke()}
+ for(const a of STEPS.slice(0,5)){ctx.fillStyle=STEPS.indexOf(a)<step?'#82f6c9':'#817aa3';ctx.beginPath();ctx.arc(x+a.x*sx,y+a.y*sy,2.4,0,Math.PI*2);ctx.fill()}
+ const target=current();ctx.fillStyle=target.color;ctx.beginPath();ctx.arc(x+target.x*sx,y+target.y*sy,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+player.x*sx,y+player.y*sy,4,0,Math.PI*2);ctx.fill();ctx.font='900 9px system-ui';ctx.fillText('ГОРОД',x+6,y+h-7);}
+function render(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#192857';ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(-camera.x,-camera.y);drawWorld();marker(current());for(const p of traffic)drawCar(p.x,p.y,p.axis==='h'?(p.dir>0?0:Math.PI):(p.dir>0?Math.PI/2:-Math.PI/2),p.col,false,p.kind==='van'?1:.83,p.kind==='van',p.braking);for(const p of pedestrians)drawPedestrian(p);for(const p of police)drawCar(p.x,p.y,p.axis==='h'?(p.dir>0?0:Math.PI):(p.dir>0?Math.PI/2:-Math.PI/2),'#f3f5ff',true,.94);for(const p of particles){ctx.fillStyle=p.t>.2?'#fff6ad':'#ef87ff';ctx.fillRect(p.x-3,p.y-3,6,6)}drawArrow();if(!(immune>0&&Math.floor(elapsed*12)%2===0))drawCar(player.x,player.y,player.a,'#a59bff');ctx.restore();drawMinimap();if(flash>0){ctx.fillStyle='rgba(255,85,110,'+(flash*.3)+')';ctx.fillRect(0,0,W,H)}}
+function loop(ts){const dt=last?Math.min((ts-last)/1000,.04):0;last=ts;if(mode==='playing')update(dt);if(mode==='flight')updateFlight(dt);render();if(flight)drawFlight();requestAnimationFrame(loop)}
+const mapkey={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'brake'};
+window.addEventListener('keydown',e=>{if(mapkey[e.code]){keys[mapkey[e.code]]=true;e.preventDefault()}else if(e.code==='KeyE'&&!e.repeat){purchase();e.preventDefault()}},{passive:false});window.addEventListener('keyup',e=>{if(mapkey[e.code]){keys[mapkey[e.code]]=false;e.preventDefault()}},{passive:false});
+// Background WebViews must not waste the mission timer; avoid invisible driving on interruption.
+function suspend(){stopKeys();if(mode==='playing'){mode='paused';$('pauseOverlay').hidden=false;}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend()});window.addEventListener('blur',suspend);
+$('resumeBtn').addEventListener('click',()=>{if(mode==='paused'){mode='playing';$('pauseOverlay').hidden=true;last=performance.now()}});
+for(const btn of document.querySelectorAll('.drive-btn[data-key]')){const k=btn.dataset.key;const down=e=>{e.preventDefault();if(mode!=='playing')return;try{btn.setPointerCapture(e.pointerId)}catch(_){}keys[k]=true;btn.classList.add('pressed')};const up=e=>{if(e)e.preventDefault();keys[k]=false;btn.classList.remove('pressed')};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',()=>up(null))}
+$('buyInGame').addEventListener('click',purchase);$('buyMobile').addEventListener('click',purchase);$('startBtn').addEventListener('click',reset);
+$('shareBtn').addEventListener('click',async()=>{try{if(navigator.share){await navigator.share({title:'Туту: Угнать отпуск',text:winCopy});return}if(navigator.clipboard){await navigator.clipboard.writeText(winCopy);showToast('Результат скопирован!');return}}catch(e){if(e.name==='AbortError')return}const el=document.createElement('textarea');el.value=winCopy;el.style.position='fixed';document.body.appendChild(el);el.select();try{document.execCommand('copy');showToast('Результат скопирован!')}catch(e){showToast(winCopy)}el.remove()});
+window.addEventListener('resize',resize,{passive:true});if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe($('gameFrame'));
+buildWorld();resize();updateHud();requestAnimationFrame(loop);
+})();
+
+</script>
+</body>
+</html>
